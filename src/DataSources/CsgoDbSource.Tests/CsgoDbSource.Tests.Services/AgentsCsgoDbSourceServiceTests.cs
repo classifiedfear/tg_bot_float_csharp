@@ -3,7 +3,7 @@ using System.Net;
 using CsgoDbSource.Dtos.AgentsDtos;
 using CsgoDbSource.Parsers;
 using CsgoDbSource.Services;
-using CsgoDbSource.Tests.ExpectedResults;
+using CsgoDbSource.Tests.ExpectedData;
 using CsgoDbSource.Tests.Fixtures;
 
 namespace CsgoDbSource.Tests.CsgoDbSource.Tests.Services;
@@ -12,9 +12,10 @@ namespace CsgoDbSource.Tests.CsgoDbSource.Tests.Services;
 public class AgentsCsgoDbSourceServiceTests(
     HtmlPagesFixture htmlPages,
     ParserOptionsFixture parserOptions
-) : BaseCsgoDbServiceTests<AgentsExpectedPage, AgentsPageDto>
+) : BaseCsgoDbServiceTests<AgentsPageDto>
 {
-    private static readonly AgentsExpectedPage expectedPage = new();
+    private static readonly AgentsExpectedData expectedPage = new();
+    private static readonly AgentsPageDto expected = expectedPage.ToPageDto();
     protected override CsgoDbSourceService<AgentsPageDto> CreateService(HttpResponseMessage responseMessage) =>
         new(
             GetHttpClientFactoryMock(responseMessage),
@@ -25,7 +26,7 @@ public class AgentsCsgoDbSourceServiceTests(
     [Fact]
     public async Task GetPage_Should_Return_Parsed_Page() =>
         await ReturnParsedPage(
-            expectedPage,
+            expected,
             new() { StatusCode = HttpStatusCode.OK, Content = new StringContent(htmlPages.AgentsPage) }
         );
 
@@ -41,15 +42,17 @@ public class AgentsCsgoDbSourceServiceTests(
             new() { StatusCode = HttpStatusCode.OK, Content = new StringContent(htmlPages.WrongPage) }
         );
 
-    protected override void ValidatePage(AgentsExpectedPage expected, AgentsPageDto actual)
+    protected override void ValidatePage(AgentsPageDto expected, AgentsPageDto actual)
     {
-        Assert.Equal(expected.AgentCount, actual.FractionCount);
-        Assert.Equal(expected.SkinCount, actual.SkinsCount);
+        Assert.Equal(expected.AgentCount, actual.AgentCount);
+        Assert.Equal(expected.SkinCount, actual.SkinCount);
         Assert.NotEmpty(actual.Agents);
 
-        var firstAgent = actual.Agents.First();
-        Assert.Equal(expected.AgentNames.First(), firstAgent.FractionName);
-        Assert.NotEmpty(firstAgent.Skins);
-        Assert.Equal(expected.SkinCountEachAgent.First(), firstAgent.SkinsCount);
+        var actualLastAgent = actual.Agents.Last();
+        var expectedLastAgent = expected.Agents.Last();
+
+        Assert.Equal(expectedLastAgent.AgentName, actualLastAgent.AgentName);
+        Assert.Equal(expectedLastAgent.SkinCount, actualLastAgent.SkinCount);
+        Assert.NotEmpty(actualLastAgent.Skins);
     }
 }

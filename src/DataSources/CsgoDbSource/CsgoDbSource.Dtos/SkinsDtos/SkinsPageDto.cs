@@ -1,10 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
 using CsgoDbSource.Dtos.SkinsDtos;
 
 namespace CsgoDbSource.Dtos.SkinsDtos;
 
-public sealed class SkinsPageDto
+[method: SetsRequiredMembers]
+public sealed record SkinsPageDto(string WeaponName)
 {
-    public required string WeaponName { get; init; }
+    public required string WeaponName { get; init; } = WeaponName;
     public List<SkinDto> Skins { get; set; } = [];
-    public int SkinCount => Skins.Count;
+    public int SkinCount { get; set; }
 }

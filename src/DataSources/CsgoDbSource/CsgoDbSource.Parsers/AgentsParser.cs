@@ -42,7 +42,7 @@ public class AgentsParser : BaseParser<AgentsPageDto>
         if (agentSkinsDtos.Count == 0)
             throw new SourceStructureException(BaseCsgoDbSourceException.SourceStructureProblem);
 
-        return new() { Agents = agentSkinsDtos, SkinsCount = agentSkinsDtos.Sum(dto => dto.SkinsCount) };
+        return new(agentSkinsDtos);
     }
 
     private async Task<List<AgentSkinsDto>> GetAgentSkinsDtos(StreamReader streamReader, CancellationToken cancellationToken)
@@ -88,10 +88,11 @@ public class AgentsParser : BaseParser<AgentsPageDto>
         if (currentDto.FractionName is not null)
         {
             AgentDto skin = currentDto.Builder.Build();
-            if (!relations.TryAdd(currentDto.FractionName, new() { FractionName = currentDto.FractionName, Skins = [skin] }))
+            if (!relations.TryAdd(currentDto.FractionName, new() { AgentName = currentDto.FractionName, Skins = [skin], SkinCount = 1 }))
             {
                 AgentSkinsDto agentSkinsDto = relations[currentDto.FractionName];
                 agentSkinsDto.Skins.Add(skin);
+                agentSkinsDto.SkinCount++;
             }
             return AgentsParserState.FillNewDto;
         }

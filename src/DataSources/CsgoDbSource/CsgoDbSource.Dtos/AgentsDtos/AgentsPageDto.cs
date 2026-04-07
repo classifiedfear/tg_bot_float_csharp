@@ -1,10 +1,12 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace CsgoDbSource.Dtos.AgentsDtos;
 
-public sealed class AgentsPageDto
+[method: SetsRequiredMembers]
+public sealed record AgentsPageDto(List<AgentSkinsDto> Agents)
 {
-    public List<AgentSkinsDto> Agents { get; set; } = [];
-    public int FractionCount => Agents.Count;
-    public int SkinsCount { get; set; }
+    public List<AgentSkinsDto> Agents { get; set; } = Agents;
+    public int AgentCount => Agents.Count;
+    public int SkinCount => Agents.Sum(dto => dto.SkinCount);
 }

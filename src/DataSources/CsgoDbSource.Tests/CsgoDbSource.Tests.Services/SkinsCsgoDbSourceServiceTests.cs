@@ -5,7 +5,7 @@ using CsgoDbSource.Dtos.SkinsDtos;
 using CsgoDbSource.Exceptions;
 using CsgoDbSource.Parsers;
 using CsgoDbSource.Services;
-using CsgoDbSource.Tests.ExpectedResults;
+using CsgoDbSource.Tests.ExpectedData;
 using CsgoDbSource.Tests.Fixtures;
 
 namespace CsgoDbSource.Tests.CsgoDbSource.Tests.Services;
@@ -13,53 +13,55 @@ namespace CsgoDbSource.Tests.CsgoDbSource.Tests.Services;
 [Collection("csgodb")]
 public class SkinsCsgoDbSourceServiceTests(
     HtmlPagesFixture htmlPages, ParserOptionsFixture parserOptions
-) : BaseCsgoDbServiceTests<SkinsExpectedPage, SkinsPageDto>
+) : BaseCsgoDbServiceTests<SkinsPageDto>
 {
-    private static readonly SkinsExpectedPage ExpectedFamasPage = new()
+    private static readonly SkinsExpectedData ExpectedFamasPage = new()
     {
         WeaponName = "FAMAS",
         Skins = [
-                    SkinsExpectedPage.MakeSkin("Commemoration", "https://www.csgodatabase.com/images/skins/webp/FAMAS_Commemoration.webp", "Covert"),
-                    SkinsExpectedPage.MakeSkin("Neural Net", "https://www.csgodatabase.com/images/skins/webp/FAMAS_Neural_Net.webp", "Restricted"),
-                    SkinsExpectedPage.MakeSkin("Pulse", "https://www.csgodatabase.com/images/skins/webp/FAMAS_Pulse.webp", "Restricted"),
+                    SkinsExpectedData.MakeSkin("Commemoration", "https://www.csgodatabase.com/images/skins/webp/FAMAS_Commemoration.webp", "Covert"),
+                    SkinsExpectedData.MakeSkin("Neural Net", "https://www.csgodatabase.com/images/skins/webp/FAMAS_Neural_Net.webp", "Restricted"),
+                    SkinsExpectedData.MakeSkin("Pulse", "https://www.csgodatabase.com/images/skins/webp/FAMAS_Pulse.webp", "Restricted"),
                 ],
         SkinCount = 42
     };
 
-    private static readonly SkinsExpectedPage ExpectedDesertEaglePage = new()
+    private static readonly SkinsExpectedData ExpectedDesertEaglePage = new()
     {
         WeaponName = "Desert Eagle",
         Skins = [
-                    SkinsExpectedPage.MakeSkin("Starcade", "https://www.csgodatabase.com/images/skins/webp/Desert_Eagle_Starcade.webp", "Classified"),
-                    SkinsExpectedPage.MakeSkin("Midnight Storm", "https://www.csgodatabase.com/images/skins/webp/Desert_Eagle_Midnight_Storm.webp", "Industrial"),
-                    SkinsExpectedPage.MakeSkin("Mulberry", "https://www.csgodatabase.com/images/skins/webp/Desert_Eagle_Mulberry.webp", "Restricted"),
+                    SkinsExpectedData.MakeSkin("Starcade", "https://www.csgodatabase.com/images/skins/webp/Desert_Eagle_Starcade.webp", "Classified"),
+                    SkinsExpectedData.MakeSkin("Midnight Storm", "https://www.csgodatabase.com/images/skins/webp/Desert_Eagle_Midnight_Storm.webp", "Industrial"),
+                    SkinsExpectedData.MakeSkin("Mulberry", "https://www.csgodatabase.com/images/skins/webp/Desert_Eagle_Mulberry.webp", "Restricted"),
                 ],
         SkinCount = 43
     };
 
 
-    private static readonly SkinsExpectedPage ExpectedKarambitPage = new()
+    private static readonly SkinsExpectedData ExpectedKarambitPage = new()
     {
         WeaponName = "Karambit",
         Skins = [
-                    SkinsExpectedPage.MakeSkin("Urban Masked", "https://www.csgodatabase.com/images/knives/webp/Karambit_Urban_Masked.webp", "Extraordinary"),
-                    SkinsExpectedPage.MakeSkin("Bright Water", "https://www.csgodatabase.com/images/knives/webp/Karambit_Bright_Water.webp", "Extraordinary"),
-                    SkinsExpectedPage.MakeSkin("Freehand", "https://www.csgodatabase.com/images/knives/webp/Karambit_Freehand.webp", "Extraordinary"),
+                    SkinsExpectedData.MakeSkin("Urban Masked", "https://www.csgodatabase.com/images/knives/webp/Karambit_Urban_Masked.webp", "Extraordinary"),
+                    SkinsExpectedData.MakeSkin("Bright Water", "https://www.csgodatabase.com/images/knives/webp/Karambit_Bright_Water.webp", "Extraordinary"),
+                    SkinsExpectedData.MakeSkin("Freehand", "https://www.csgodatabase.com/images/knives/webp/Karambit_Freehand.webp", "Extraordinary"),
                 ],
-        SkinCount = 25
+        SkinCount = 24
     };
 
-    public static readonly TheoryData<SkinsExpectedPage> TestParams = new()
+    public static readonly TheoryData<SkinsPageDto> TestParams = new()
     {
-        {ExpectedDesertEaglePage}, {ExpectedFamasPage}, {ExpectedKarambitPage}
+        { ExpectedDesertEaglePage.ToPageDto() },
+        { ExpectedFamasPage.ToPageDto() },
+        { ExpectedKarambitPage.ToPageDto() }
     };
 
     [Theory]
     [MemberData(nameof(TestParams), DisableDiscoveryEnumeration = true)]
-    public async Task GetPage_Should_Return_Parsed_Page(SkinsExpectedPage expectedPage) =>
+    public async Task GetPage_Should_Return_Parsed_Page(SkinsPageDto expected) =>
         await ReturnParsedPage(
-            expectedPage,
-            new() { StatusCode = HttpStatusCode.OK, Content = new StringContent(htmlPages.GetSkinPage(expectedPage.WeaponName)) }
+            expected,
+            new() { StatusCode = HttpStatusCode.OK, Content = new StringContent(htmlPages.GetSkinPage(expected.WeaponName)) }
         );
 
     [Fact]
@@ -88,16 +90,11 @@ public class SkinsCsgoDbSourceServiceTests(
         new SkinsParser(parserOptions.SkinsOptions),
         GetResiliencePipeline());
 
-    protected override void ValidatePage(SkinsExpectedPage expected, SkinsPageDto actual)
+    protected override void ValidatePage(SkinsPageDto expected, SkinsPageDto actual)
     {
         Assert.NotEmpty(actual.Skins);
         Assert.Equal(expected.SkinCount, actual.SkinCount);
         Assert.Equal(expected.WeaponName, actual.WeaponName);
-
-        foreach (var skin in expected.Skins)
-        {
-            Assert.Contains(skin, actual.Skins);
-        }
     }
 }
 

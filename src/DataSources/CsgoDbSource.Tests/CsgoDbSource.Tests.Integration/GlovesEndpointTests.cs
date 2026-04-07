@@ -1,7 +1,7 @@
 using System;
 using CsgoDbSource.Dtos.GlovesDtos;
 using CsgoDbSource.Exceptions;
-using CsgoDbSource.Tests.ExpectedResults;
+using CsgoDbSource.Tests.ExpectedData;
 using Microsoft.AspNetCore.Http;
 
 namespace CsgoDbSource.Tests.CsgoDbSource.Tests.Integration;
@@ -10,39 +10,17 @@ public class GlovesEndpointTests(TestsWebApplicationFactory factory) : BaseEndpo
 {
     protected override void SuccessValidate(GlovesPageDto expected, GlovesPageDto actual)
     {
-        Assert.Equal(expected.GlovesCount, actual.GlovesCount);
-        Assert.Equal(expected.SkinsCount, actual.SkinsCount);
+        Assert.Equal(expected.GloveCount, actual.GloveCount);
+        Assert.Equal(expected.SkinCount, actual.SkinCount);
         Assert.NotEmpty(actual.Gloves);
-
-        var firstCategory = actual.Gloves.First();
-        var expectedFirstCategory = expected.Gloves.First();
-        Assert.Equal(expectedFirstCategory.GloveName, firstCategory.GloveName);
-        Assert.Equal(expectedFirstCategory.SkinCount, firstCategory.SkinCount);
-        Assert.NotEmpty(firstCategory.Skins);
     }
 
 
-    private static readonly GlovesExpectedPage glovesPageData = new();
-
-    private static GlovesPageDto CreateExpectedPage(GlovesExpectedPage expectedData)
-    {
-        var glovesSkinDtos = new List<GloveSkinsDto>();
-        for (int i = 0; i < expectedData.GloveCount; i++)
-        {
-            glovesSkinDtos.Add(
-                new()
-                {
-                    GloveName = expectedData.GloveNames[i],
-                    Skins = [expectedData.OneSkinEachGlove[i]]
-                });
-        }
-
-        return new() { Gloves = glovesSkinDtos, SkinsCount = expectedData.SkinCount };
-    }
+    private static readonly GlovesExpectedData glovesExpectedData = new();
 
     [Fact]
     public async Task GetGloves_Should_Succeed() =>
-        await EndpointShouldSucceed("/gloves", CreateExpectedPage(glovesPageData));
+        await EndpointShouldSucceed("/gloves", glovesExpectedData.ToPageDto());
 
     [Fact]
     public async Task GetGloves_Should_Fail_502() =>

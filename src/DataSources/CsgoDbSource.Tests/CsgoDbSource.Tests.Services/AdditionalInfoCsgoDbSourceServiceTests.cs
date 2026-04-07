@@ -11,8 +11,24 @@ namespace CsgoDbSource.Tests.CsgoDbSource.Tests.Services;
 [Collection("csgodb")]
 public class AdditionalInfoCsgoDbSourceServiceTests(
     HtmlPagesFixture htmlPages, ParserOptionsFixture parserOptions
-) : BaseCsgoDbServiceTests<AdditionalInfoPageDto, AdditionalInfoPageDto>
+) : BaseCsgoDbServiceTests<AdditionalInfoPageDto>
 {
+    protected override CsgoDbSourceService<AdditionalInfoPageDto> CreateService(HttpResponseMessage responseMessage) =>
+        new(GetHttpClientFactoryMock(responseMessage),
+        new AdditionalInfoParser(parserOptions.AdditionalInfoOptions),
+        GetResiliencePipeline());
+
+    protected override void ValidatePage(AdditionalInfoPageDto expected, AdditionalInfoPageDto actual)
+    {
+        Assert.Equal(expected.WeaponName, actual.WeaponName);
+        Assert.Equal(expected.SkinName, actual.SkinName);
+        Assert.Equal(expected.Rarity, actual.Rarity);
+        Assert.Equal(expected.StattrakExistence, actual.StattrakExistence);
+        Assert.Equal(expected.WeaponSkinImg, actual.WeaponSkinImg);
+
+        Assert.All(expected.Qualities, quality => Assert.Contains(quality, actual.Qualities));
+        Assert.All(expected.StattrakQualities, quality => Assert.Contains(quality, actual.StattrakQualities));
+    }
     private readonly static AdditionalInfoPageDto ExpectedFiveSevenMonkeyBusinessPage = new AdditionalInfoPageDto.Builder()
             .WithWeapon("Five-SeveN")
             .WithSkinName("Monkey Business")
@@ -50,22 +66,4 @@ public class AdditionalInfoCsgoDbSourceServiceTests(
     [Fact]
     public async Task GetPage_Should_Throw_When_Source_Changed() =>
         await SourceChanged(new() { StatusCode = HttpStatusCode.OK, Content = new StringContent(htmlPages.WrongPage) });
-
-
-    protected override CsgoDbSourceService<AdditionalInfoPageDto> CreateService(HttpResponseMessage responseMessage) =>
-        new(GetHttpClientFactoryMock(responseMessage),
-        new AdditionalInfoParser(parserOptions.AdditionalInfoOptions),
-        GetResiliencePipeline());
-
-    protected override void ValidatePage(AdditionalInfoPageDto expected, AdditionalInfoPageDto actual)
-    {
-        Assert.Equal(expected.WeaponName, actual.WeaponName);
-        Assert.Equal(expected.SkinName, actual.SkinName);
-        Assert.Equal(expected.Rarity, actual.Rarity);
-        Assert.Equal(expected.StattrakExistence, actual.StattrakExistence);
-        Assert.Equal(expected.WeaponSkinImg, actual.WeaponSkinImg);
-
-        Assert.All(expected.Qualities, quality => Assert.Contains(quality, actual.Qualities));
-        Assert.All(expected.StattrakQualities, quality => Assert.Contains(quality, actual.StattrakQualities));
-    }
 }

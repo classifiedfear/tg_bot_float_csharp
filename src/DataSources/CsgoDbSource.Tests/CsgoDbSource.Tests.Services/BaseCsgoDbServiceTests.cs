@@ -7,7 +7,7 @@ using Polly.Retry;
 
 namespace CsgoDbSource.Tests;
 
-public abstract class BaseCsgoDbServiceTests<TExpected, TActual>
+public abstract class BaseCsgoDbServiceTests<T>
 {
     protected static IHttpClientFactory GetHttpClientFactoryMock(HttpResponseMessage responseMessage)
     {
@@ -32,7 +32,7 @@ public abstract class BaseCsgoDbServiceTests<TExpected, TActual>
         return pipeline;
     }
 
-    protected async Task ReturnParsedPage(TExpected expected, HttpResponseMessage responseMessage)
+    protected async Task ReturnParsedPage(T expected, HttpResponseMessage responseMessage)
     {
         var service = CreateService(responseMessage);
 
@@ -66,6 +66,6 @@ public abstract class BaseCsgoDbServiceTests<TExpected, TActual>
         );
     }
 
-    protected abstract ICsgoDbSourceService<TActual> CreateService(HttpResponseMessage responseMessage);
-    protected abstract void ValidatePage(TExpected expected, TActual actual);
+    protected abstract ICsgoDbSourceService<T> CreateService(HttpResponseMessage responseMessage);
+    protected abstract void ValidatePage(T expected, T actual);
 }

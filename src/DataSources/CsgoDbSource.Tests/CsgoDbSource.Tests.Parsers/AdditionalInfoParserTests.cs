@@ -30,13 +30,10 @@ public class AdditionalInfoParserTests(HtmlPagesFixture htmlPages, ParserOptions
         .WithImg("https://www.csgodatabase.com/images/skins/webp/P90_Emerald_Dragon.webp")
         .Build();
 
-
-
     public static TheoryData<AdditionalInfoPageDto> ExpectedPage => new() {
          { ExpectedAwpLightningStrikePage },
          { ExpectedP90EmeraldDragonPage }
         };
-
 
     [Theory]
     [MemberData(nameof(ExpectedPage), DisableDiscoveryEnumeration = true)]

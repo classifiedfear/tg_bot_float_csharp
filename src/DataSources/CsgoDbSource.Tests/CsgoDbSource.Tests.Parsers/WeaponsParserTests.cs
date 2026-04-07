@@ -1,9 +1,10 @@
 using CsgoDbSource.Dtos.WeaponsDtos;
 using CsgoDbSource.Parsers;
 using CsgoDbSource.Exceptions;
-using CsgoDbSource.Tests.ExpectedResults;
+
 using System.Text;
 using CsgoDbSource.Tests.Fixtures;
+using CsgoDbSource.Tests.ExpectedData;
 
 namespace CsgoDbSource.Tests.Parsers;
 
@@ -13,17 +14,19 @@ public class WeaponsParserTests(HtmlPagesFixture htmlPages, ParserOptionsFixture
 
     private readonly WeaponsParser parser = new(optionsFixture.WeaponsOptions);
 
-    private static readonly WeaponsExpectedPage expectedPage = new()
+    private static readonly WeaponsExpectedData expectedData = new()
     {
-        OneWeaponEachCategory = [
-            WeaponsExpectedPage.MakeWeapon("CZ75-Auto", "https://www.csgodatabase.com/images/weapons/webp/CZ75-Auto.webp", 36),
-            WeaponsExpectedPage.MakeWeapon("AUG", "https://www.csgodatabase.com/images/weapons/webp/AUG.webp", 44),
-            WeaponsExpectedPage.MakeWeapon("MAC-10", "https://www.csgodatabase.com/images/weapons/webp/MAC-10.webp", 55),
-            WeaponsExpectedPage.MakeWeapon("XM1014", "https://www.csgodatabase.com/images/weapons/webp/XM1014.webp", 44),
-            WeaponsExpectedPage.MakeWeapon("Falchion Knife", "https://www.csgodatabase.com/images/knives/webp/Falchion_Knife.webp", 25),
-            WeaponsExpectedPage.MakeWeapon("Zeus x27", "https://www.csgodatabase.com/images/weapons/webp/Zeus_x27.webp", 7),
+        SampleWeaponPerCategory = [
+            WeaponsExpectedData.MakeWeapon("CZ75-Auto", "https://www.csgodatabase.com/images/weapons/webp/CZ75-Auto.webp", 36),
+            WeaponsExpectedData.MakeWeapon("AUG", "https://www.csgodatabase.com/images/weapons/webp/AUG.webp", 44),
+            WeaponsExpectedData.MakeWeapon("MAC-10", "https://www.csgodatabase.com/images/weapons/webp/MAC-10.webp", 55),
+            WeaponsExpectedData.MakeWeapon("XM1014", "https://www.csgodatabase.com/images/weapons/webp/XM1014.webp", 44),
+            WeaponsExpectedData.MakeWeapon("Falchion Knife", "https://www.csgodatabase.com/images/knives/webp/Falchion_Knife.webp", 25),
+            WeaponsExpectedData.MakeWeapon("Zeus x27", "https://www.csgodatabase.com/images/weapons/webp/Zeus_x27.webp", 7),
         ]
     };
+
+    private static readonly WeaponsPageDto expected = expectedData.ToPageDto();
 
     [Fact]
     public async Task GetParsedData_Should_Parse_Complete_Weapons_Page()
@@ -33,19 +36,29 @@ public class WeaponsParserTests(HtmlPagesFixture htmlPages, ParserOptionsFixture
         var actual = await parser.GetParsedData(stream, CancellationToken.None);
 
         Assert.NotNull(actual);
-        Assert.Equal(expectedPage.CategoryCount, actual.CategoryCount);
-        Assert.Equal(expectedPage.WeaponCount, actual.WeaponCount);
 
-        Assert.Equal(expectedPage.CategoryNames, actual.Categories.Select(c => c.Category));
-        Assert.Equal(expectedPage.WeaponCountEachCategory, actual.Categories.Select(c => c.WeaponInCategoryCount));
+        Assert.Equal(expected.CategoryCount, actual.CategoryCount);
+        Assert.Equal(expected.WeaponCount, actual.WeaponCount);
 
-        var actualWeapons = actual.Categories.SelectMany(
-            categoryDto => categoryDto.Weapons).Where(
-                weaponDto => expectedPage.OneWeaponEachCategory.Any(
-                    expectedWeapon => expectedWeapon == weaponDto)
-            ).ToArray();
+        Assert.NotEmpty(actual.Categories);
 
-        Assert.Equal(expectedPage.OneWeaponEachCategory, actualWeapons);
+        var expectedAndActualCategoryDtos = expected.Categories.Zip(actual.Categories);
+
+        foreach (
+            (
+                CategoryWeaponDto expectedCategoryDto,
+                CategoryWeaponDto actualCategoryDto
+            ) in expectedAndActualCategoryDtos)
+        {
+            Assert.Equal(expectedCategoryDto.Category, actualCategoryDto.Category);
+            Assert.Equal(expectedCategoryDto.WeaponInCategoryCount, actualCategoryDto.WeaponInCategoryCount);
+
+            Assert.NotEmpty(actualCategoryDto.Weapons);
+
+            var sampleWeapon = expectedCategoryDto.Weapons[0];
+
+            Assert.Contains(sampleWeapon, actualCategoryDto.Weapons);
+        }
     }
 
     [Fact]

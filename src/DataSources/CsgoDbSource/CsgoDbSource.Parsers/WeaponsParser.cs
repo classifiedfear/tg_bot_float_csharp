@@ -14,7 +14,7 @@ namespace CsgoDbSource.Parsers;
 
 public sealed class WeaponsParser : BaseParser<WeaponsPageDto>
 {
-    private static readonly string othersCategory = "Others";
+    private readonly string othersCategory = "Others";
     private Regex TotalWeaponRegex { get; init; }
     private Regex NameRegex { get; init; }
     private Regex CategoryCountRegex { get; init; }
@@ -37,15 +37,18 @@ public sealed class WeaponsParser : BaseParser<WeaponsPageDto>
     {
         using var streamReader = new StreamReader(stream);
 
-        WeaponsPageDto page = new();
+
+        var categoryWeaponDtos = new List<CategoryWeaponDto>();
+
         await foreach (var dto in GetCategoryWeaponDtos(streamReader, cancellationToken))
         {
             if (dto.WeaponInCategoryCount == 0)
                 throw new SourceStructureException(BaseCsgoDbSourceException.SourceStructureProblem);
 
-            page.Categories.Add(dto);
-            page.WeaponCount += dto.WeaponInCategoryCount;
+            categoryWeaponDtos.Add(dto);
         }
+
+        WeaponsPageDto page = new(categoryWeaponDtos);
 
         if (page.CategoryCount == 0)
             throw new SourceStructureException(BaseCsgoDbSourceException.SourceStructureProblem);

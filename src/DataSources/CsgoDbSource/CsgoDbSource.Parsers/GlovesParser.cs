@@ -41,7 +41,7 @@ public sealed class GlovesParser : BaseParser<GlovesPageDto>
         if (gloveSkinsDtos.Count == 0)
             throw new SourceStructureException(BaseCsgoDbSourceException.SourceStructureProblem);
 
-        return new() { Gloves = gloveSkinsDtos, SkinsCount = gloveSkinsDtos.Sum(dto => dto.SkinCount) };
+        return new(gloveSkinsDtos);
 
     }
 
@@ -84,10 +84,11 @@ public sealed class GlovesParser : BaseParser<GlovesPageDto>
         if (dto.GloveName is not null)
         {
             GloveDto skin = dto.Builder.Build();
-            if (!relations.TryAdd(dto.GloveName, new() { GloveName = dto.GloveName, Skins = [skin] }))
+            if (!relations.TryAdd(dto.GloveName, new() { GloveName = dto.GloveName, Skins = [skin], SkinCount = 1 }))
             {
                 GloveSkinsDto gloveSkinsDto = relations[dto.GloveName];
                 gloveSkinsDto.Skins.Add(skin);
+                gloveSkinsDto.SkinCount++;
             }
             return GlovesParserState.FillNewDto;
         }

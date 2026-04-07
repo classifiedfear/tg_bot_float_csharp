@@ -1,7 +1,8 @@
 using System.Text;
+using CsgoDbSource.Dtos.GlovesDtos;
 using CsgoDbSource.Exceptions;
 using CsgoDbSource.Parsers;
-using CsgoDbSource.Tests.ExpectedResults;
+using CsgoDbSource.Tests.ExpectedData;
 using CsgoDbSource.Tests.Fixtures;
 
 namespace CsgoDbSource.Tests.Parsers;
@@ -10,50 +11,51 @@ namespace CsgoDbSource.Tests.Parsers;
 public class GlovesParserTests(HtmlPagesFixture htmlPages, ParserOptionsFixture parserOptions)
 {
     private readonly GlovesParser parser = new(parserOptions.GlovesOptions);
-    private static readonly GlovesExpectedPage expectedPage = new()
+    private static readonly GlovesExpectedData expectedData = new()
     {
-        OneSkinEachGlove = [
-            GlovesExpectedPage.MakeGlove(
+        SampleSkinEachGlove = [
+            GlovesExpectedData.MakeGlove(
                 "Charred",
                 "https://www.csgodatabase.com/images/gloves/webp/Bloodhound_Gloves_Charred.webp",
                 "Extraordinary"
             ),
-            GlovesExpectedPage.MakeGlove(
+            GlovesExpectedData.MakeGlove(
                 "Jade",
                 "https://www.csgodatabase.com/images/gloves/webp/Broken_Fang_Gloves_Jade.webp",
                 "Extraordinary"
             ),
-            GlovesExpectedPage.MakeGlove(
+            GlovesExpectedData.MakeGlove(
                 "Diamondback",
                 "https://www.csgodatabase.com/images/gloves/webp/Driver_Gloves_Diamondback.webp",
                 "Extraordinary"
             ),
-            GlovesExpectedPage.MakeGlove(
+            GlovesExpectedData.MakeGlove(
                 "CAUTION!",
                 "https://www.csgodatabase.com/images/gloves/webp/Hand_Wraps_CAUTION!.webp",
                 "Extraordinary"
             ),
-            GlovesExpectedPage.MakeGlove(
+            GlovesExpectedData.MakeGlove(
                 "Emerald",
                 "https://www.csgodatabase.com/images/gloves/webp/Hydra_Gloves_Emerald.webp",
                 "Extraordinary"
             ),
-            GlovesExpectedPage.MakeGlove(
+            GlovesExpectedData.MakeGlove(
                 "Polygon",
                 "https://www.csgodatabase.com/images/gloves/webp/Moto_Gloves_Polygon.webp",
                 "Extraordinary"
             ),
-            GlovesExpectedPage.MakeGlove(
+            GlovesExpectedData.MakeGlove(
                 "Buckshot",
                 "https://www.csgodatabase.com/images/gloves/webp/Specialist_Gloves_Buckshot.webp",
                 "Extraordinary"
             ),
-            GlovesExpectedPage.MakeGlove(
+            GlovesExpectedData.MakeGlove(
                 "Arid",
                 "https://www.csgodatabase.com/images/gloves/webp/Sport_Gloves_Arid.webp",
-                "Extraordinary")
-    ]
+                "Extraordinary")]
     };
+
+    private readonly static GlovesPageDto expected = expectedData.ToPageDto();
 
     [Fact]
     public async Task GetParsedData_Should_Parse_Complete_Gloves_Page()
@@ -63,19 +65,26 @@ public class GlovesParserTests(HtmlPagesFixture htmlPages, ParserOptionsFixture 
         var actual = await parser.GetParsedData(stream, CancellationToken.None);
 
         Assert.NotNull(actual);
-        Assert.Equal(expectedPage.GloveCount, actual.GlovesCount);
-        Assert.Equal(expectedPage.SkinCount, actual.SkinsCount);
+        Assert.Equal(expected.GloveCount, actual.GloveCount);
+        Assert.Equal(expected.SkinCount, actual.SkinCount);
 
-        Assert.Equal(expectedPage.GloveNames, actual.Gloves.Select(gloveSkinDto => gloveSkinDto.GloveName));
-        Assert.Equal(expectedPage.SkinCountEachGlove, actual.Gloves.Select(gloveSkinDto => gloveSkinDto.SkinCount));
+        var expectedAndActualGloveSkinsDtos = expected.Gloves.Zip(actual.Gloves);
 
-        var actualGloves = actual.Gloves.SelectMany(
-            gloveSkinDto => gloveSkinDto.Skins).Where(
-                gloveDto => expectedPage.OneSkinEachGlove.Any(
-                    expectedGlove => expectedGlove == gloveDto)
-        );
+        foreach (
+            (
+                GloveSkinsDto expectedGloveSkinsDto,
+                GloveSkinsDto actualGloveSkinsDto
+            ) in expectedAndActualGloveSkinsDtos)
+        {
+            Assert.Equal(expectedGloveSkinsDto.GloveName, actualGloveSkinsDto.GloveName);
+            Assert.Equal(expectedGloveSkinsDto.SkinCount, actualGloveSkinsDto.SkinCount);
 
-        Assert.Equal(expectedPage.OneSkinEachGlove, actualGloves);
+            Assert.NotEmpty(actualGloveSkinsDto.Skins);
+
+            var sampleGloveSkin = expectedGloveSkinsDto.Skins[0];
+
+            Assert.Contains(sampleGloveSkin, actualGloveSkinsDto.Skins);
+        }
     }
 
     [Fact]

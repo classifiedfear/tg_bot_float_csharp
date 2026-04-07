@@ -10,6 +10,7 @@ namespace CsgoDbSource.Parsers;
 
 public sealed class SkinsParser : BaseParser<SkinsPageDto>
 {
+    private readonly string vanillaSkin = "Vanilla";
     private Regex NameRegex { get; init; }
     private Regex WeaponNameRegex { get; init; }
     private Regex ImgRegex { get; init; }
@@ -64,7 +65,7 @@ public sealed class SkinsParser : BaseParser<SkinsPageDto>
                     TryGetWeaponName(line, out var weaponName)
                 )
             {
-                pageDto = new() { WeaponName = weaponName! };
+                pageDto = new(weaponName!);
                 newState = SkinsParserState.PrepToNewSkin;
             }
 
@@ -74,6 +75,7 @@ public sealed class SkinsParser : BaseParser<SkinsPageDto>
             if (newState == SkinsParserState.CommitSkin)
             {
                 pageDto!.Skins.Add(builder!.Build());
+                pageDto.SkinCount++;
                 newState = SkinsParserState.PrepToNewSkin;
             }
 
@@ -93,6 +95,9 @@ public sealed class SkinsParser : BaseParser<SkinsPageDto>
     {
         if (TryGetSkinName(line, out var skinName))
         {
+            if (skinName == vanillaSkin)
+                return SkinsParserState.LookingForSkins;
+
             builder.WithSkinName(skinName!);
             return SkinsParserState.LookingForRarity;
         }

@@ -1,10 +1,12 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace CsgoDbSource.Dtos.WeaponsDtos;
 
-public sealed class WeaponsPageDto
+[method: SetsRequiredMembers]
+public sealed record WeaponsPageDto(List<CategoryWeaponDto> Categories)
 {
-    public List<CategoryWeaponDto> Categories { get; set; } = [];
-    public int WeaponCount { get; set; }
+    public required List<CategoryWeaponDto> Categories { get; init; } = Categories;
+    public int WeaponCount => Categories.Sum(dto => dto.WeaponInCategoryCount);
     public int CategoryCount => Categories.Count;
 }
